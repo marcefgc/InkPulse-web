@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── InkPulse Solid-Edge Design Tokens ── */
+  --color-background: #0b1326;
+  --color-surface: #0b1326;
+  --color-surface-dim: #060e20;
+  --color-surface-low: #131b2e;
+  --color-surface-mid: #171f33;
+  --color-surface-high: #222a3d;
+  --color-surface-highest: #2d3449;
+  --color-surface-bright: #31394d;
+
+  --color-primary: #b1c7f2;
+  --color-on-primary: #193053;
+  --color-primary-container: #001b3d;
+
+  --color-secondary: #adc7ff;
+  --color-on-secondary: #002e68;
+
+  --color-tertiary: #66dd8b;
+  --color-on-tertiary: #003919;
+
+  --color-on-surface: #dae2fd;
+  --color-on-surface-variant: #c4c6cf;
+  --color-outline: #8e9099;
+  --color-outline-variant: #44474e;
+
+  --color-error: #ffb4ab;
+
+  --font-family-headline: "Manrope", sans-serif;
+  --font-family-body: "Inter", sans-serif;
+}
+
+/* ── Base ── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  font-family: var(--font-family-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--color-tertiary) 30%, transparent);
+  color: var(--color-tertiary);
+}
+
+/* ── Solid-Edge utility ── */
+.border-edge {
+  border: 2px solid var(--color-outline-variant);
+}
+
+.glass-panel {
+  background: rgba(45, 52, 73, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ── Form: "Procesando..." sending state — pulsing #66dd8b border ── */
+@keyframes border-pulse {
+  0%, 100% { border-color: var(--color-tertiary); opacity: 1; }
+  50%       { border-color: transparent;           opacity: 0.6; }
+}
+
+.animate-border-pulse {
+  animation: border-pulse 1s ease-in-out infinite;
+}
