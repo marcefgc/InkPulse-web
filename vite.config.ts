@@ -4,4 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // base './' genera rutas relativas para que funcione en cualquier
+  // subdirectorio de GitHub Pages (ej. usuario.github.io/repo-name/)
+  base: './',
 })
