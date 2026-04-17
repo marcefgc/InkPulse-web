@@ -3,22 +3,35 @@ import { Check, X } from "lucide-react";
 
 interface Row {
   feature: string;
-  starter: boolean;
-  business: boolean;
-  pro: boolean;
-  enterprise: boolean;
+  bronze: boolean;
+  silver: boolean;
+  gold: boolean;
+  platinum: boolean;
 }
 
 const rows: Row[] = [
-  { feature: "Monitoreo SNMP Multimarca", starter: true, business: true, pro: true, enterprise: true },
-  { feature: "Alertas Criticas", starter: true, business: true, pro: true, enterprise: true },
-  { feature: "Modo NOC / Informes HTML", starter: false, business: true, pro: true, enterprise: true },
-  { feature: "Alertas SMTP Personalizadas", starter: false, business: false, pro: true, enterprise: true },
-  { feature: "Panel Web multi-dispositivo", starter: false, business: false, pro: false, enterprise: true },
-  { feature: "API REST de Acceso Total", starter: false, business: false, pro: false, enterprise: true },
+  { feature: "Monitoreo SNMP multimarca",          bronze: true,  silver: true,  gold: true,  platinum: true  },
+  { feature: "Alertas criticas por email",          bronze: true,  silver: true,  gold: true,  platinum: true  },
+  { feature: "Dashboard web",                       bronze: false, silver: true,  gold: true,  platinum: true  },
+  { feature: "Dashboard avanzado con analytics",    bronze: false, silver: false, gold: true,  platinum: true  },
+  { feature: "Predicciones de consumo de toner",    bronze: false, silver: false, gold: false, platinum: true  },
+  { feature: "Modulo de costos",                    bronze: false, silver: true,  gold: true,  platinum: true  },
+  { feature: "Exportacion de reportes",             bronze: false, silver: true,  gold: true,  platinum: true  },
+  { feature: "Exportacion PDF y Excel",             bronze: false, silver: false, gold: true,  platinum: true  },
+  { feature: "Exportacion CSV y JSON",              bronze: false, silver: false, gold: false, platinum: true  },
+  { feature: "Control de escritura",                bronze: false, silver: true,  gold: true,  platinum: true  },
+  { feature: "Roles Manager y Viewer",              bronze: false, silver: true,  gold: true,  platinum: true  },
+  { feature: "Historial ilimitado",                 bronze: false, silver: false, gold: false, platinum: true  },
 ];
 
-const plans = ["Starter", "Business", "Pro", "Enterprise"] as const;
+const plans = [
+  { key: "bronze",   label: "Bronce"  },
+  { key: "silver",   label: "Plata"   },
+  { key: "gold",     label: "Oro"     },
+  { key: "platinum", label: "Platino" },
+] as const;
+
+type PlanKey = typeof plans[number]["key"];
 
 function CellIcon({ value }: { value: boolean }) {
   return value ? (
@@ -32,7 +45,7 @@ function ComparisonTable() {
   return (
     <section id="comparativa" className="relative py-24">
       <div className="mx-auto max-w-6xl px-6">
-        {/* ── Section header ── */}
+        {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -44,11 +57,11 @@ function ComparisonTable() {
             Comparativa de Funciones
           </h2>
           <p className="mt-4 font-body text-lg text-on-surface-variant">
-            Encuentra el plan que se ajusta a las necesidades de tu organizacion.
+            Encuentra el tier que se ajusta a las necesidades de tu organizacion.
           </p>
         </motion.div>
 
-        {/* ── Table ── */}
+        {/* Table */}
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -64,10 +77,10 @@ function ComparisonTable() {
                 </th>
                 {plans.map((plan) => (
                   <th
-                    key={plan}
+                    key={plan.key}
                     className="border-b-2 border-outline-variant px-4 py-4 text-center font-headline text-xs font-bold uppercase tracking-widest text-on-surface-variant"
                   >
-                    {plan}
+                    {plan.label}
                   </th>
                 ))}
               </tr>
@@ -81,18 +94,14 @@ function ComparisonTable() {
                   <td className="border-b border-outline-variant/40 px-6 py-4 font-body text-sm text-on-surface">
                     {row.feature}
                   </td>
-                  <td className="border-b border-outline-variant/40 px-4 py-4 text-center">
-                    <CellIcon value={row.starter} />
-                  </td>
-                  <td className="border-b border-outline-variant/40 px-4 py-4 text-center">
-                    <CellIcon value={row.business} />
-                  </td>
-                  <td className="border-b border-outline-variant/40 px-4 py-4 text-center">
-                    <CellIcon value={row.pro} />
-                  </td>
-                  <td className="border-b border-outline-variant/40 px-4 py-4 text-center">
-                    <CellIcon value={row.enterprise} />
-                  </td>
+                  {plans.map((plan) => (
+                    <td
+                      key={plan.key}
+                      className="border-b border-outline-variant/40 px-4 py-4 text-center"
+                    >
+                      <CellIcon value={row[plan.key as PlanKey]} />
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
