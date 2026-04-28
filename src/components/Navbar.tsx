@@ -1,23 +1,39 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
-const navLinks = [
-  { label: "Inicio", href: "#inicio" },
-  { label: "Como funciona", href: "#como-funciona" },
-  { label: "Caracteristicas", href: "#caracteristicas" },
-  { label: "Precios", href: "#precios" },
-  { label: "Contacto", href: "#contacto" },
+// Anchor links — prefixed with "/" when on sub-pages so the browser navigates
+// back to home first, then scrolls to the section.
+const HOME_ANCHORS = [
+  { label: "Inicio",          anchor: "#inicio" },
+  { label: "Como funciona",   anchor: "#como-funciona" },
+  { label: "Caracteristicas", anchor: "#caracteristicas" },
+  { label: "Precios",         anchor: "#precios" },
+  { label: "Contacto",        anchor: "#contacto" },
 ];
+
+function useNavLinks() {
+  const { pathname } = useLocation();
+  const isHome = pathname === "/";
+  return HOME_ANCHORS.map((l) => ({
+    label: l.label,
+    href: isHome ? l.anchor : `/${l.anchor}`,
+  }));
+}
 
 function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const navLinks = useNavLinks();
+  const { pathname } = useLocation();
+  const isHome = pathname === "/";
+  const ctaHref = isHome ? "#precios" : "/#precios";
 
   return (
     <nav className="fixed top-0 inset-x-0 z-50 border-b-2 border-outline-variant bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-2">
         {/* ── Logo ── */}
-        <a href="#inicio" className="flex items-center gap-3 group min-w-0">
+        <Link to="/" className="flex items-center gap-3 group min-w-0">
           <div className="relative flex shrink-0 items-center justify-center">
             {/* Glow ring detrás del icono */}
             <div className="absolute inset-0 rounded-full bg-primary/20 blur-md scale-110 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -35,12 +51,12 @@ function Navbar() {
               Smart Alerts for Smart Offices
             </span>
           </div>
-        </a>
+        </Link>
 
         {/* ── Desktop links ── */}
-        <ul className="hidden items-center gap-8 md:flex">
+        <ul className="hidden items-center gap-7 md:flex">
           {navLinks.map((link) => (
-            <li key={link.href}>
+            <li key={link.label}>
               <a
                 href={link.href}
                 className="font-body text-sm font-medium text-on-surface-variant transition-colors hover:text-primary"
@@ -49,11 +65,21 @@ function Navbar() {
               </a>
             </li>
           ))}
+          <li>
+            <Link
+              to="/beta"
+              className={`font-body text-sm font-medium transition-colors hover:text-primary ${
+                pathname.startsWith("/beta") ? "text-tertiary" : "text-on-surface-variant"
+              }`}
+            >
+              Beta
+            </Link>
+          </li>
         </ul>
 
         {/* ── Desktop CTA ── */}
         <a
-          href="#precios"
+          href={ctaHref}
           className="hidden rounded-none border-2 border-tertiary bg-tertiary px-5 py-2 font-headline text-sm font-bold text-on-tertiary transition-colors hover:bg-tertiary/90 md:inline-block"
         >
           Empezar
@@ -82,7 +108,7 @@ function Navbar() {
           >
             <ul className="flex flex-col gap-1 px-6 py-4">
               {navLinks.map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <a
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
@@ -92,9 +118,20 @@ function Navbar() {
                   </a>
                 </li>
               ))}
+              <li>
+                <Link
+                  to="/beta"
+                  onClick={() => setMobileOpen(false)}
+                  className={`block rounded-none px-3 py-3 font-body text-base font-medium transition-colors hover:bg-surface-high hover:text-primary ${
+                    pathname.startsWith("/beta") ? "text-tertiary" : "text-on-surface-variant"
+                  }`}
+                >
+                  Beta Program
+                </Link>
+              </li>
               <li className="mt-3">
                 <a
-                  href="#precios"
+                  href={ctaHref}
                   onClick={() => setMobileOpen(false)}
                   className="block rounded-none border-2 border-tertiary bg-tertiary px-5 py-3 text-center font-headline text-sm font-bold text-on-tertiary transition-colors hover:bg-tertiary/90"
                 >

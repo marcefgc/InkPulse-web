@@ -1,34 +1,24 @@
 /**
- * useForm.ts — Custom hook for PSA Enterprise contact & quote forms.
- * ──────────────────────────────────────────────────────────────────
- * [Backend Architect]  Owns the JSON payload structure and HTTP contract.
- * [Frontend Developer] Owns field state, validation pipeline, and send lifecycle.
+ * useForm.ts — Custom hook for InkPulse contact & quote forms.
+ * ─────────────────────────────────────────────────────────────
+ * Uses Web3Forms (https://web3forms.com) — 250 free submissions/month,
+ * no backend required, works directly from the browser.
  *
- * FORMSPREE SETUP
- * ───────────────
- * 1. Go to https://formspree.io → "New Form" → copy the form ID (e.g. "xpwzabcd").
- * 2. Open  landing/.env  (create it from .env.example if needed) and set:
+ * SETUP
+ * ─────
+ * 1. Go to https://web3forms.com → enter your email → copy the Access Key.
+ * 2. Create a .env file in the project root (copy from .env.example) and set:
  *
- *      VITE_FORMSPREE_ID=xpwzabcd
+ *      VITE_WEB3FORMS_KEY=your-access-key-here
  *
- * 3. That's it. The hook reads the variable at build time via import.meta.env.
- *    The endpoint resolves to: https://formspree.io/f/<your-id>
- *
- * ALTERNATIVE (Netlify Forms)
- * ───────────────────────────
- * Set VITE_FORM_ENDPOINT to your Netlify or any compatible REST endpoint.
- * The payload is plain JSON — no library dependency required.
+ * 3. That's it. The hook picks it up at build time via import.meta.env.
  */
 
 import { useState } from "react";
 
-// ── Endpoint resolution ────────────────────────────────────────────────────
-const FORMSPREE_ID = (import.meta.env.VITE_FORMSPREE_ID as string | undefined) ?? "";
-const CUSTOM_ENDPOINT = (import.meta.env.VITE_FORM_ENDPOINT as string | undefined) ?? "";
-
-export const FORM_ENDPOINT =
-  CUSTOM_ENDPOINT ||
-  (FORMSPREE_ID ? `https://formspree.io/f/${FORMSPREE_ID}` : "");
+// ── Endpoint & key ─────────────────────────────────────────────────────────
+const WEB3FORMS_KEY = (import.meta.env.VITE_WEB3FORMS_KEY as string | undefined) ?? "";
+const WEB3FORMS_ENDPOINT = "https://api.web3forms.com/submit";
 
 // ── Send status ────────────────────────────────────────────────────────────
 export type SendStatus = "idle" | "sending" | "success" | "error";
@@ -69,12 +59,12 @@ export function validateField(name: keyof FormValues, value: string): string {
     case "plan":
       return v === "" ? "Seleccione un plan de interés." : "";
     case "email":
-      if (v.length === 0)       return "El email es obligatorio.";
-      if (!EMAIL_RE.test(v))    return "Ingrese un email válido (ej. juan@empresa.com).";
+      if (v.length === 0)    return "El email es obligatorio.";
+      if (!EMAIL_RE.test(v)) return "Ingrese un email válido (ej. juan@empresa.com).";
       return "";
     case "mensaje":
-      if (v.length === 0)  return "El mensaje es obligatorio.";
-      if (v.length < 10)   return "El mensaje debe tener al menos 10 caracteres.";
+      if (v.length === 0) return "El mensaje es obligatorio.";
+      if (v.length < 10)  return "El mensaje debe tener al menos 10 caracteres.";
       return "";
     default:
       return "";
@@ -87,42 +77,31 @@ function isValid(values: FormValues): boolean {
   );
 }
 
-// ── [Backend Architect] JSON payload ──────────────────────────────────────
-// This is the exact structure delivered to the destination email.
-// Order matters: Formspree renders fields top-to-bottom in the email body.
-interface FormPayload {
-  nombre:            string;
-  empresa:           string;
-  plan_seleccionado: string;
-  email:             string;
-  mensaje:           string;
-  // Formspree meta-directives (underscore prefix = not shown in email body)
-  _subject:          string;
-  _replyto:          string;
-}
-
-function buildPayload(v: FormValues): FormPayload {
+// ── Payload ────────────────────────────────────────────────────────────────
+function buildPayload(v: FormValues) {
   const nombre  = v.nombre.value.trim();
   const empresa = v.empresa.value.trim();
   return {
+    access_key: WEB3FORMS_KEY,
+    subject:    `[PSA Enterprise] Solicitud de ${empresa || nombre}`,
+    from_name:  "InkPulse Web",
+    replyto:    v.email.value.trim(),
     nombre,
     empresa,
     plan_seleccionado: v.plan.value,
     email:             v.email.value.trim(),
     mensaje:           v.mensaje.value.trim(),
-    _subject:  `[PSA Enterprise] Solicitud de ${empresa || nombre}`,
-    _replyto:  v.email.value.trim(),
   };
 }
 
 // ── Hook ───────────────────────────────────────────────────────────────────
 export interface UseFormReturn {
-  fields:      FormValues;
-  status:      SendStatus;
-  serverError: string;
-  update:      (name: keyof FormValues, value: string) => void;
-  touch:       (name: keyof FormValues) => void;
-  handleSubmit:(e: React.FormEvent) => Promise<void>;
+  fields:       FormValues;
+  status:       SendStatus;
+  serverError:  string;
+  update:       (name: keyof FormValues, value: string) => void;
+  touch:        (name: keyof FormValues) => void;
+  handleSubmit: (e: React.FormEvent) => Promise<void>;
 }
 
 export function useForm(defaultPlan = ""): UseFormReturn {
@@ -136,7 +115,6 @@ export function useForm(defaultPlan = ""): UseFormReturn {
   const [status, setStatus]           = useState<SendStatus>("idle");
   const [serverError, setServerError] = useState("");
 
-  // Validate live once the field has been touched at least once
   function update(name: keyof FormValues, value: string) {
     setFields((prev) => ({
       ...prev,
@@ -148,7 +126,6 @@ export function useForm(defaultPlan = ""): UseFormReturn {
     }));
   }
 
-  // Mark touched + run validation on blur
   function touch(name: keyof FormValues) {
     setFields((prev) => ({
       ...prev,
@@ -160,11 +137,9 @@ export function useForm(defaultPlan = ""): UseFormReturn {
     }));
   }
 
-  // Touch every field to reveal all errors, then submit if clean
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // Force-touch all fields so errors become visible
     const allTouched = (Object.keys(fields) as (keyof FormValues)[]).reduce(
       (acc, k) => ({
         ...acc,
@@ -178,14 +153,10 @@ export function useForm(defaultPlan = ""): UseFormReturn {
     );
     setFields(allTouched);
 
-    if (!isValid(allTouched)) return;   // Client-side gate
+    if (!isValid(allTouched)) return;
 
-    if (!FORM_ENDPOINT) {
-      // Dev fallback: log payload and simulate success so QA can see the UI
-      console.warn(
-        "[useForm] No VITE_FORMSPREE_ID set. Simulating success.\nPayload:",
-        buildPayload(allTouched)
-      );
+    if (!WEB3FORMS_KEY) {
+      console.warn("[useForm] No VITE_WEB3FORMS_KEY set. Simulating success.\nPayload:", buildPayload(allTouched));
       setStatus("sending");
       await new Promise((r) => setTimeout(r, 1200));
       setStatus("success");
@@ -196,17 +167,18 @@ export function useForm(defaultPlan = ""): UseFormReturn {
     setServerError("");
 
     try {
-      const res = await fetch(FORM_ENDPOINT, {
+      const res = await fetch(WEB3FORMS_ENDPOINT, {
         method:  "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body:    JSON.stringify(buildPayload(allTouched)),
       });
 
-      if (res.ok) {
+      const data = await res.json().catch(() => ({})) as { success?: boolean; message?: string };
+
+      if (res.ok && data.success) {
         setStatus("success");
       } else {
-        const data = await res.json().catch(() => ({})) as { error?: string };
-        setServerError(data?.error ?? "Error al enviar. Por favor intente nuevamente.");
+        setServerError(data.message ?? "Error al enviar. Por favor intente nuevamente.");
         setStatus("error");
       }
     } catch {

@@ -4,5 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: '/', // Cambiar de '/InkPulse-web/' a '/'
+  base: '/',
+  // SPA mode: Vite preview serves index.html for any unknown route
+  appType: 'spa',
 })
